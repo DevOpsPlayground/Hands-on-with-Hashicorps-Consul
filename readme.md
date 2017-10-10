@@ -109,8 +109,9 @@ t
 ```
 docker run -d \
   --name consul --net=host \
+  -p 8500:8500 \
   -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true, "ui": true,  "dns_config": { "allow_stale": false }}' \
-  consul agent -server -bind={{GetPrivateIP}} -client=0.0.0.0 -bootstrap
+  consul agent -server -bind={{GetPrivateIP}} -client=0.0.0.0  -bootstrap
 ```
 
 
@@ -131,6 +132,20 @@ In the consul server container:
 `apk add jq --no-cache`
 
 
+# AWS
+## Install Docker
+`apt install docker.io`
+
+## Start consul server
+```
+docker run -d \
+  --name consul --net=host \
+  -p 8500:8500 \
+  -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true, "ui": true,  "dns_config": { "allow_stale": false }}' \
+  consul agent -server -bind=<PRIVATE IP> -client=0.0.0.0  -bootstrap
+```
+
+## Start registrator
 
 
 
