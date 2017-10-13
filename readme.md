@@ -155,14 +155,30 @@ docker run -d \
       consul://localhost:8500
 ```
 
+
+
 ## Start two nginx servers
 
-`docker run -d -P --name=nginx nginx`
+### Create two index pages
 
-or
+```
+echo "Nginx 1
+Name: {{ keyOrDefault \"playground/test\" \"name missing\" }}" >> /tmp/index.html.1.template
+echo "Nginx 2
+Name: {{ keyOrDefault \"playground/test2\" \"name missing\" }}" >> /tmp/index.html.2.template
 
-`docker run -d -P --name=nginx -e "SERVICE_TAGS=webserver" nginx`
-`docker run -d -P --name=nginx2 -e "SERVICE_TAGS=webserver" nginx`
+```
+
+### Render templates
+
+`nohup consul-template -template "/tmp/index.html.1.template:/tmp/index.html.1:docker restart nginx || true" -template "/tmp/index.html.2.template:/tmp/index.html.2:docker restart nginx2 || true" &`
+
+### Start nginx containers
+
+```
+docker run -d -P --name=nginx -v /tmp/index.html.1:/usr/share/nginx/html/index.html -e "SERVICE_NAME=webserver" nginx
+docker run -d -P --name=nginx2 -v /tmp/index.html.2:/usr/share/nginx/html/index.html -e "SERVICE_NAME=webserver" nginx
+```
 
 
 ## Setup Load Balancer
@@ -179,16 +195,17 @@ tar -xvzf /tmp/consul-template.tar.gz -C /bin
 
 vi /tmp/nginx.conf.template
 upstream app {
-  least_conn;
-  {{range service "nginx"}}server {{.Address}}:{{.Port}} max_fails=3 fail_timeout=60 weight=1;
+  {{range service "webserver"}}server {{.Address}}:{{.Port}} max_fails=3 fail_timeout=60 weight=1;
   {{else}}server 127.0.0.1:65535; # force a 502{{end}}
 }
 
 server {
   listen 80 default_server;
+  resolver 172.16.0.23;
+  set $upstream_endpoint http://app;
 
   location / {
-    proxy_pass http://app;
+    proxy_pass $upstream_endpoint;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -201,7 +218,7 @@ server {
 
 ### Render nginx.conf file
 ```
-nohup consul-template  -template "/tmp/nginx.conf.template:/tmp/nginx.conf" &
+nohup consul-template -template "/tmp/nginx.conf.template:/tmp/nginx.conf:docker restart nginx-lb || true" &
 cat /tmp/nginx.conf
 docker stop nginx2
 cat /tmp/nginx.conf
@@ -211,12 +228,16 @@ cat /tmp/nginx.conf
 
 ### Use nginx.conf
 ```
-docker run --name nginx -v /tmp/nginx.conf:/etc/nginx/nginx.conf:ro -d nginx
-docker run --name nginx-lb -v /tmp/nginx.conf:/etc/nginx/nginx.conf -e "SERVICE_TAGS=loadbalancer" -d nginx
+docker run -p 80:80 --name nginx-lb \
+  -v /tmp/nginx.conf:/etc/nginx/conf.d/default.conf \
+  -e "SERVICE_TAGS=loadbalancer" -d \
+  nginx
 ```
 
+need to change other nginx containers of course
 
+Need to create keys in Consul
 
-
+security group: 8500, 80
 
 
