@@ -17,9 +17,9 @@ This is the order in which we will proceed:
 ### Michel Lebeau
 DevOps and CD consultant @[ECS Digital](https://ecs-digital.co.uk)
 
-[Email](mailto: michel@ecs-digital.co.uk)
+[Email](mailto:michel@ecs-digital.co.uk)
 [LinkedIn](https://linkedin.com/in/micheldlebeau)
-[Twitter](https://twitter.com/micheldlebeau) 
+[twitter](https://twitter.com/micheldlebeau) 
 [Website](https://micheldlebeau.com)
 
 ### Consul
