@@ -117,6 +117,7 @@ Details:
 `nohup consul-template -template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'" -template "/tmp/index.html.2.template:/tmp/index.html.2:/bin/bash -c 'docker restart nginx || true'" &`
 
 Details:
+
 * `nohup ... &`: will run the command in the background, as consul template will run indefinitely, watching for changes
 * `consul-template `: we call consul template
 * `-template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'"`: we let consul template know that it should use the template `/tmp/index.html.1`, and render it as `/tmp/index.html.1`, and finally run a command to restart the nginx container whenever the template is re-rendered
@@ -136,8 +137,10 @@ docker run -d -P --name=nginx2 -v /tmp/index.html.2:/usr/share/nginx/html/index.
 ```
 
 Details:
+
 * `-P`: make any ports used in the container available on the host, but let Docker handle it
 * `-v /tmp/index.html.1:`: mount the `/tmp/index.html.1` file on our host as `/usr/share/nginx/html/index.html` in the container, which is the page that will be served by default as the root of the webserver
+* `-e "SERVICE_NAME=webserver"`: let registrator know that this container is running the service webserver, and it will automatically register it with Consul
 * `nginx`: use the official nginx image with the latest version
 
 ### Query our two nginx servers
@@ -193,6 +196,16 @@ EOT
 
 Details:
 
+* `cat <<EOT >> /tmp/nginx.conf.template `: will append everything that comes after this line and before the text `EOT` to the file `/tmp/nginx.conf.template`
+* `upstream app { ... }`: set the list of servers that can handle requests
+* `{{range service "webserver"}}server {{.Address}}:{{.Port}} max_fails=3 fail_timeout=60 weight=1;`: loop over all our services "webserver", effectively our two nginx webservers, and add their address then port to the template
+* `{{else}}server 127.0.0.1:65535; # force a 502{{end}}`: if there is no service called webserver, then our list will be empty, so we do this little trick in order to return a 502 to the user
+* `server { ... }`: configure our server
+* `listen 80 default_server;`: listen on the port 80
+* `resolver 172.16.0.23;`: set the DNS to be the one from AWS, this is needed for dynamic load balancing
+* `set \$upstream_endpoint http://app;`: we escape the $ here so that `$upstream_endpoint` isn't interpreted by bash, and we let nginx know that the upstream endpoint is http://app, with app being one of the servers defined previously
+* `location / { ... }`: this block takes care of proxying the details of the requests when the root page is called
+
 
 ### Render nginx.conf file
 ```
@@ -204,6 +217,7 @@ docker start nginx2
 cat /tmp/nginx.conf
 ```
 
+
 ### Use nginx.conf
 ```
 docker run -p 80:80 --name nginx-lb \
@@ -211,6 +225,9 @@ docker run -p 80:80 --name nginx-lb \
   -e "SERVICE_TAGS=loadbalancer" -d \
   nginx
 ```
+
+
+
 
 
 Need to automate creation of servers
