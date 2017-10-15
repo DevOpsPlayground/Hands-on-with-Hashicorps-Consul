@@ -12,9 +12,17 @@ This is the order in which we will proceed:
 4. [Setup the load balancer](#setup-the-load-balancer)
 
 
-# Background
+## Background
 
-## Consul
+### Michel Lebeau
+DevOps and CD consultant @[ECS Digital](https://ecs-digital.co.uk)
+
+[Email](mailto: michel@ecs-digital.co.uk)
+[LinkedIn](https://linkedin.com/in/micheldlebeau)
+[Twitter](https://twitter.com/micheldlebeau) 
+[Website](https://micheldlebeau.com)
+
+### Consul
 
 * Made by HashiCorp
 * Open Source
@@ -24,28 +32,28 @@ This is the order in which we will proceed:
 * Multi Datacenter
 
 
-## Registrator
+### Registrator
 
 Takes care of registering our services automatically with Consul.
 
 
-## Nginx
+### Nginx
 
 * Widely used web server
 * Can act as a load balancer
 
 
-# Hands-on!
-## Pre-reqs
+## Hands-on!
+### Pre-reqs
 t2.micro, with consul-playground security group
 
-## Become root
+### Become root
 `sudo su`
 
-## Install Docker
+### Install Docker
 `apt install -y docker.io`
 
-## Start consul server
+### Start consul server
 
 ```
 docker run -d \
@@ -68,7 +76,7 @@ Details:
 * `-client=0.0.0.0`: accept connections from anywhere
 * `-bootstrap`: let the consul server be the only server
 
-## Start registrator
+### Start registrator
 ```bash
 docker run -d \
     --name=registrator \
@@ -84,9 +92,9 @@ Details:
 * `gliderlabs/registrator:latest`:
 * `consul://localhost:8500`:
 
-## Start two nginx servers
+### Start two nginx servers
 
-### Create two index pages
+#### Create two index pages
 
 ```
 echo "Nginx 1
@@ -100,7 +108,7 @@ Details:
 
 * `{{ keyOrDefault \"playground/server1\" \"server1 name missing\" }}"`: will be replaced by consul-template with the value of the key `playground/server1`, or will be "server1 name missing" by default if no key with this name is present
 
-### Download Consul Template and install it
+#### Download Consul Template and install it
 
 ```
 wget https://releases.hashicorp.com/consul-template/0.19.3/consul-template_0.19.3_linux_amd64.tgz -O /tmp/consul-template.tar.gz
@@ -112,7 +120,7 @@ Details:
 * `wget https://releases.hashicorp.com/consul-template/0.19.3/consul-template_0.19.3_linux_amd64.tgz -O /tmp/consul-template.tar.gz`: downloads the consul template archive in `/tmp`
 * `tar -xvzf /tmp/consul-template.tar.gz -C /bin`: extracts the binary from the archive and place it in `/bin`
 
-### Render the templates
+#### Render the templates
 
 `nohup consul-template -template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'" -template "/tmp/index.html.2.template:/tmp/index.html.2:/bin/bash -c 'docker restart nginx || true'" &`
 
@@ -123,13 +131,13 @@ Details:
 * `-template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'"`: we let consul template know that it should use the template `/tmp/index.html.1`, and render it as `/tmp/index.html.1`, and finally run a command to restart the nginx container whenever the template is re-rendered
 
 
-### Look at the two index pages generated
+#### Look at the two index pages generated
 ```
 cat /tmp/index.html.1
 cat /tmp/index.html.2
 ```
 
-### Start nginx containers
+#### Start nginx containers
 
 ```
 docker run -d -P --name=nginx -v /tmp/index.html.1:/usr/share/nginx/html/index.html -e "SERVICE_NAME=webserver" nginx
@@ -143,17 +151,17 @@ Details:
 * `-e "SERVICE_NAME=webserver"`: let registrator know that this container is running the service webserver, and it will automatically register it with Consul
 * `nginx`: use the official nginx image with the latest version
 
-### Query our two nginx servers
-#### Get the ports on which they are accessible
+#### Query our two nginx servers
+##### Get the ports on which they are accessible
 `docker ps -f name=nginx`
 
 This will display your two new nginx containers, and see the port mapping as seen below, where nginx and nginx2 are respectively running on the ports `32768` and `32769`. 
 ![](./images/nginx-ports.png)
 
-#### Query the servers
+##### Query the servers
 `curl localhost:32768`
 
-### Create the keys in the key/value store of Consul
+#### Create the keys in the key/value store of Consul
 Go to `http://<public IP>:8500/ui/`
 
 1. In the top menu, click on the KEY/VALUE menu item.
@@ -162,14 +170,14 @@ Go to `http://<public IP>:8500/ui/`
 4. Repeat steps 2 and 3 for the key `playground/server2`
 
 
-#### Query the servers again
+##### Query the servers again
 `curl localhost:32768` and you should see your keys at work!
 You can change the values of the keys and see the result immediately.
 
 
-## Setup the load balancer
+### Setup the load balancer
 
-### Setup nginx.conf template
+#### Setup nginx.conf template
 
 ```
 cat <<EOT >> /tmp/nginx.conf.template
@@ -207,7 +215,7 @@ Details:
 * `location / { ... }`: this block takes care of proxying the details of the requests when the root page is called
 
 
-### Render nginx.conf file
+#### Render nginx.conf file
 ```
 nohup consul-template -template "/tmp/nginx.conf.template:/tmp/nginx.conf:/bin/bash -c 'docker restart nginx-lb || true'" &
 cat /tmp/nginx.conf
@@ -218,7 +226,7 @@ cat /tmp/nginx.conf
 ```
 
 
-### Use nginx.conf
+#### Start the load balancer
 ```
 docker run -p 80:80 --name nginx-lb \
   -v /tmp/nginx.conf:/etc/nginx/conf.d/default.conf \
