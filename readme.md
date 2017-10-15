@@ -2,7 +2,7 @@
 ## Introduction
 During this meetup, we will see what Consul can do in terms of Service Discovery, Health Checking, and see how we can use its Key/Value store. We will create two nginx servers, serving two different pages. These pages will display keys from the K/V store of Consul using Consul Template. We will then dynamically load balance these two servers with a third nginx server, which will only send traffic to the servers that are online.
 
-INSERT DIAGRAM OF THE ARCHITECTURE
+INSERT DIAGRAM OF THE ARCHITECTURE from draw.io
 
 This is the order in which we will proceed:
 
