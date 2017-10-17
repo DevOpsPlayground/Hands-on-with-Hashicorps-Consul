@@ -39,8 +39,9 @@ Takes care of registering our services automatically with Consul.
 
 ### Nginx
 
-* Widely used web server
+* Widely used HTTP server
 * Can act as a load balancer
+* Can be configured to act as a reverse proxy
 
 ### AWS
 
@@ -126,12 +127,13 @@ Details:
 
 Details:
 
-* `nohup ... &`: will run the command in the background, as consul template will run indefinitely, watching for changes
+* `nohup ... &`: will run the command in the background and detached, as consul template will run indefinitely, watching for changes
 * `consul-template `: we call consul template
-* `-template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'"`: we let consul template know that it should use the template `/tmp/index.html.1`, and render it as `/tmp/index.html.1`, and finally run a command to restart the nginx container whenever the template is re-rendered
+* `-template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'"`: we let consul template know that it should use the template `/tmp/index.html.1.template`, and render it as `/tmp/index.html.1`, and finally run a command to restart the nginx container whenever the template is re-rendered
 
 
 #### Look at the two index pages generated
+
 ```
 cat /tmp/index.html.1
 cat /tmp/index.html.2
@@ -149,7 +151,7 @@ Details:
 * `-P`: make any ports used in the container available on the host, but let Docker handle it
 * `-v /tmp/index.html.1:`: mount the `/tmp/index.html.1` file on our host as `/usr/share/nginx/html/index.html` in the container, which is the page that will be served by default as the root of the webserver
 * `-e "SERVICE_NAME=webserver"`: let registrator know that this container is running the service webserver, and it will automatically register it with Consul
-* `nginx`: use the official nginx image with the latest version
+* `nginx:1.13.5`: use the official nginx image version 1.13.5
 
 #### Query our two nginx servers
 ##### Get the ports on which they are accessible
@@ -171,7 +173,7 @@ Go to `http://<public IP>:8500/ui/`
 
 
 ##### Query the servers again
-`curl localhost:32768` and you should see your keys at work!
+`curl localhost:32768` and you should see your keys working!
 You can change the values of the keys and see the result immediately.
 
 
