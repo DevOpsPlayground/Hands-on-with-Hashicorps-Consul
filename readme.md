@@ -15,7 +15,7 @@ During this meetup, we will see what Consul can do in terms of Service Discovery
 ## Background
 
 ### Michel Lebeau
-DevOps and CD consultant @[ECS Digital](https://ecs-digital.co.uk)
+DevOps and CD Consultant @[ECS Digital](https://ecs-digital.co.uk)
 
 [Email](mailto:michel@ecs-digital.co.uk)
 [LinkedIn](https://linkedin.com/in/micheldlebeau)
@@ -31,17 +31,26 @@ DevOps and CD consultant @[ECS Digital](https://ecs-digital.co.uk)
 * Distributed Key/Value Store
 * Multi Datacenter
 
+### Consul Template
+
+* Convenient way to populate values from Consul on a file system running the consul-template daemon
+* Consul-template queries a Consul or Vault cluster and updates any number of specified templates on the file system
+* Can optionally run arbitrary commands when the update process completes
 
 ### Registrator
 
-Takes care of registering our services automatically with Consul.
-
+* Automatically registers and deregisters services for any Docker container by inspecting containers as they come online
+* A service is anything listening on a port
+* Any services Registrator finds on a container, they will be added to Consul’s service registry
+* Supports Consul, etcd and SkyDNS 2
 
 ### Nginx
 
-* Widely used HTTP server
-* Can act as a load balancer
-* Can be configured to act as a reverse proxy
+* Open Source
+* Web server
+* Reverse Proxy
+* Load Balancer
+* HTTP Cache
 
 ### AWS
 
@@ -53,6 +62,11 @@ Leading container platform which gives a layer of abstraction enabling us to run
 
 
 ## Hands-on!
+
+### SSH into your instance
+1. ssh devops@<your IP>
+1. You will be prompted to confirm that the key looks correct, type `y` then Enter
+2. Then enter the password: `playground` and press Enter
 
 ### Start consul server
 
@@ -98,10 +112,9 @@ Details:
 #### Create two index pages
 
 ```
-echo "Nginx 1
-Name: {{ keyOrDefault \"playground/server1\" \"server1 name missing\" }}" >> /tmp/index.html.1.template
-echo "Nginx 2
-Name: {{ keyOrDefault \"playground/server2\" \"server2 name missing\" }}" >> /tmp/index.html.2.template
+
+echo "Server Nginx 1, Name: {{ keyOrDefault \"playground/server1\" \"server1 name missing\" }}" >> /tmp/index.html.1.template
+echo "Server Nginx 2, Name: {{ keyOrDefault \"playground/server2\" \"server2 name missing\" }}" >> /tmp/index.html.2.template
 
 ```
 
@@ -236,18 +249,10 @@ docker run -p 80:80 --name nginx-lb \
   nginx:1.13.5
 ```
 
+You can now type your public IP (the one you were given on paper) in your browser and see your page.
+Here are a few of things that you can try:
 
-# TODO
-
-
-Need to automate creation of servers
-sudo apt install -y docker.io
-sudo docker pull consul
-sudo docker pull nginx
-
-security group: 8500, 80
-Region: London
-
-need to change user/passwd
-
-need to do presentation from readme?
+* Refresh several times, you will see the two pages alternate
+* Change your values in Consul UI, notice how the text changes in your browser
+* Change your index templates, notice what happens. Why?
+* Shutdown nginx or nginx2 and see what happens if you refresh your browser. (hint: `docker stop nginx`, `docker start nginx`...)
