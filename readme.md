@@ -64,7 +64,7 @@ Leading container platform which gives a layer of abstraction enabling us to run
 ## Hands-on!
 
 ### SSH into your instance
-1. ssh devops@<your IP>
+1. ssh devops@your.IP
 1. You will be prompted to confirm that the key looks correct, type `y` then Enter
 2. Then enter the password: `playground` and press Enter
 
