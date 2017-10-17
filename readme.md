@@ -44,9 +44,11 @@ Takes care of registering our services automatically with Consul.
 
 ### AWS
 
+Leading Cloud Services provider, we will be using an EC2 (Elastic Cloud Compute) instance each.
 
 ### Docker
 
+Leading container platform which gives a layer of abstraction enabling us to run services in separate, contained environments.
 
 
 ## Hands-on!
@@ -86,9 +88,9 @@ docker run -d \
 
 Details:
 
-* `--volume=/var/run/docker.sock:/tmp/docker.sock`:
+* `--volume=/var/run/docker.sock:/tmp/docker.sock`: Allows Registrator to access Docker API
 * `gliderlabs/registrator`:
-* `consul://localhost:8500`:
+* `consul://localhost:8500`: registry URL, in this case Consul
 
 ### Start two nginx servers
 
