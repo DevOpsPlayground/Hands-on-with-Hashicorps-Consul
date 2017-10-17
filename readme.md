@@ -107,7 +107,8 @@ Details:
 * `gliderlabs/registrator`:
 * `consul://localhost:8500`: registry URL, in this case Consul
 
-### Start two nginx servers
+
+### Generate your index pages
 
 #### Create two index pages
 
@@ -151,6 +152,10 @@ Details:
 cat /tmp/index.html.1
 cat /tmp/index.html.2
 ```
+
+
+### Start two nginx servers
+
 
 #### Start nginx containers
 
