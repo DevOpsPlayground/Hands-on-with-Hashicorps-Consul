@@ -2,9 +2,9 @@
 ## Introduction
 During this meetup, we will see what Consul can do in terms of Service Discovery, Health Checking, and see how we can use its Key/Value store. We will create two nginx servers, serving two different pages. These pages will display keys from the K/V store of Consul using Consul Template. We will then dynamically load balance these two servers with a third nginx server, which will only send traffic to the servers that are online.
 
-INSERT DIAGRAM OF THE ARCHITECTURE from draw.io
+![](./images/architecture.png)
 
-This is the order in which we will proceed:
+## Agenda
 
 1. [Start a Consul Server](#start-a-consul-server)
 2. [Configure and start Registrator](#start-registrator)
@@ -42,16 +42,14 @@ Takes care of registering our services automatically with Consul.
 * Widely used web server
 * Can act as a load balancer
 
+### AWS
+
+
+### Docker
+
+
 
 ## Hands-on!
-### Pre-reqs
-t2.micro, with consul-playground security group
-
-### Become root
-`sudo su`
-
-### Install Docker
-`apt install -y docker.io`
 
 ### Start consul server
 
@@ -60,7 +58,7 @@ docker run -d \
   --name consul --net=host \
   -p 8500:8500 \
   -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true, "ui": true,  "dns_config": { "allow_stale": false }}' \
-  consul agent -server -bind="$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)" -client=0.0.0.0  -bootstrap
+  consul:1.0.0 agent -server -bind="$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)" -client=0.0.0.0  -bootstrap
 ```
 Details:
 
@@ -82,14 +80,14 @@ docker run -d \
     --name=registrator \
     --net=host \
     --volume=/var/run/docker.sock:/tmp/docker.sock \
-    gliderlabs/registrator:latest \
+    gliderlabs/registrator \
       consul://localhost:8500
 ```
 
 Details:
 
 * `--volume=/var/run/docker.sock:/tmp/docker.sock`:
-* `gliderlabs/registrator:latest`:
+* `gliderlabs/registrator`:
 * `consul://localhost:8500`:
 
 ### Start two nginx servers
@@ -112,7 +110,7 @@ Details:
 
 ```
 wget https://releases.hashicorp.com/consul-template/0.19.3/consul-template_0.19.3_linux_amd64.tgz -O /tmp/consul-template.tar.gz
-tar -xvzf /tmp/consul-template.tar.gz -C /bin
+sudo tar -xvzf /tmp/consul-template.tar.gz -C /bin
 ```
 
 Details:
@@ -122,7 +120,7 @@ Details:
 
 #### Render the templates
 
-`nohup consul-template -template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'" -template "/tmp/index.html.2.template:/tmp/index.html.2:/bin/bash -c 'docker restart nginx || true'" &`
+`nohup consul-template -template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'" -template "/tmp/index.html.2.template:/tmp/index.html.2:/bin/bash -c 'docker restart nginx2 || true'" &`
 
 Details:
 
@@ -140,8 +138,8 @@ cat /tmp/index.html.2
 #### Start nginx containers
 
 ```
-docker run -d -P --name=nginx -v /tmp/index.html.1:/usr/share/nginx/html/index.html -e "SERVICE_NAME=webserver" nginx
-docker run -d -P --name=nginx2 -v /tmp/index.html.2:/usr/share/nginx/html/index.html -e "SERVICE_NAME=webserver" nginx
+docker run -d -P --name=nginx -v /tmp/index.html.1:/usr/share/nginx/html/index.html -e "SERVICE_NAME=webserver" nginx:1.13.5
+docker run -d -P --name=nginx2 -v /tmp/index.html.2:/usr/share/nginx/html/index.html -e "SERVICE_NAME=webserver" nginx:1.13.5
 ```
 
 Details:
@@ -231,7 +229,7 @@ cat /tmp/nginx.conf
 docker run -p 80:80 --name nginx-lb \
   -v /tmp/nginx.conf:/etc/nginx/conf.d/default.conf \
   -e "SERVICE_TAGS=loadbalancer" -d \
-  nginx
+  nginx:1.13.5
 ```
 
 
