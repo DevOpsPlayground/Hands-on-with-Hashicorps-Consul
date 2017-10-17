@@ -71,11 +71,13 @@ Leading container platform which gives a layer of abstraction enabling us to run
 ### Start consul server
 
 ```
+
 docker run -d \
   --name consul --net=host \
   -p 8500:8500 \
   -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true, "ui": true,  "dns_config": { "allow_stale": false }}' \
   consul:1.0.0 agent -server -bind="$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)" -client=0.0.0.0  -bootstrap
+  
 ```
 Details:
 
@@ -92,13 +94,15 @@ Details:
 * `-bootstrap`: let the consul server be the only server
 
 ### Start registrator
-```bash
+```
+
 docker run -d \
     --name=registrator \
     --net=host \
     --volume=/var/run/docker.sock:/tmp/docker.sock \
     gliderlabs/registrator \
       consul://localhost:8500
+      
 ```
 
 Details:
@@ -126,8 +130,10 @@ Details:
 #### Download Consul Template and install it
 
 ```
+
 wget https://releases.hashicorp.com/consul-template/0.19.3/consul-template_0.19.3_linux_amd64.tgz -O /tmp/consul-template.tar.gz
 sudo tar -xvzf /tmp/consul-template.tar.gz -C /bin
+
 ```
 
 Details:
@@ -137,7 +143,13 @@ Details:
 
 #### Render the templates
 
-`nohup consul-template -template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'" -template "/tmp/index.html.2.template:/tmp/index.html.2:/bin/bash -c 'docker restart nginx2 || true'" &`
+```
+
+nohup consul-template \
+-template "/tmp/index.html.1.template:/tmp/index.html.1:/bin/bash -c 'docker restart nginx || true'" \
+-template "/tmp/index.html.2.template:/tmp/index.html.2:/bin/bash -c 'docker restart nginx2 || true'" &
+
+```
 
 Details:
 
@@ -149,8 +161,10 @@ Details:
 #### Look at the two index pages generated
 
 ```
+
 cat /tmp/index.html.1
 cat /tmp/index.html.2
+
 ```
 
 
@@ -160,14 +174,16 @@ cat /tmp/index.html.2
 #### Start nginx containers
 
 ```
+
 docker run -d -P --name=nginx -v /tmp/index.html.1:/usr/share/nginx/html/index.html -e "SERVICE_NAME=webserver" nginx:1.13.5
 docker run -d -P --name=nginx2 -v /tmp/index.html.2:/usr/share/nginx/html/index.html -e "SERVICE_NAME=webserver" nginx:1.13.5
+
 ```
 
 Details:
 
 * `-P`: make any ports used in the container available on the host, but let Docker handle it
-* `-v /tmp/index.html.1:`: mount the `/tmp/index.html.1` file on our host as `/usr/share/nginx/html/index.html` in the container, which is the page that will be served by default as the root of the webserver
+* `-v /tmp/index.html.1:-v /tmp/index.html.1:/usr/share/nginx/html/index.html`: mount the `/tmp/index.html.1` file on our host as `/usr/share/nginx/html/index.html` in the container, which is the page that will be served by default as the root of the webserver
 * `-e "SERVICE_NAME=webserver"`: let registrator know that this container is running the service webserver, and it will automatically register it with Consul
 * `nginx:1.13.5`: use the official nginx image version 1.13.5
 
@@ -191,7 +207,10 @@ Go to `http://<public IP>:8500/ui/`
 
 
 ##### Query the servers again
-`curl localhost:32768` and you should see your keys working!
+
+The port will now have changed, so run `docker ps -f name=nginx` again to see which ports are in use now. 
+
+`curl localhost:32770` and you should see your keys working!
 You can change the values of the keys and see the result immediately.
 
 
@@ -236,22 +255,38 @@ Details:
 
 
 #### Render nginx.conf file
-```
-nohup consul-template -template "/tmp/nginx.conf.template:/tmp/nginx.conf:/bin/bash -c 'docker restart nginx-lb || true'" &
-cat /tmp/nginx.conf
-docker stop nginx2
-cat /tmp/nginx.conf
-docker start nginx2
-cat /tmp/nginx.conf
-```
+
+`nohup consul-template -template "/tmp/nginx.conf.template:/tmp/nginx.conf:/bin/bash -c 'docker restart nginx-lb || true'" &`
+
+#### Output the content of nginx.conf
+
+`cat /tmp/nginx.conf`
+
+#### Stop nginx2
+
+`docker stop nginx2`
+
+#### Output the content of nginx.conf
+
+`cat /tmp/nginx.conf`
+
+#### Stop nginx2
+
+`docker start nginx2`
+
+#### Output the content of nginx.conf
+
+`cat /tmp/nginx.conf`
 
 
 #### Start the load balancer
 ```
+
 docker run -p 80:80 --name nginx-lb \
   -v /tmp/nginx.conf:/etc/nginx/conf.d/default.conf \
   -e "SERVICE_TAGS=loadbalancer" -d \
   nginx:1.13.5
+  
 ```
 
 You can now type your public IP (the one you were given on paper) in your browser and see your page.
@@ -261,3 +296,4 @@ Here are a few of things that you can try:
 * Change your values in Consul UI, notice how the text changes in your browser
 * Change your index templates, notice what happens. Why?
 * Shutdown nginx or nginx2 and see what happens if you refresh your browser. (hint: `docker stop nginx`, `docker start nginx`...)
+
